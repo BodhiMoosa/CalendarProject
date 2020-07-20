@@ -40,4 +40,8 @@ enum Months : Int, CaseIterable {
     }
 }
 
+enum Images {
+    static let calendarOne = UIImage(systemName: "calendar")
+}
+
 

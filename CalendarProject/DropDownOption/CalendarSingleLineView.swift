@@ -9,7 +9,7 @@
 import UIKit
 
 protocol CalendarDelegate : class {
-    func tapOnLineItem(tag: Int)
+    func tapOnLineItem(tag: Int, numSelected: Int)
         }
 
 class CalendarSingleLineView: UIView {
@@ -122,7 +122,7 @@ class CalendarSingleLineView: UIView {
         guard let view          = sender.view as? UILabel else { return }
         guard let number        = Int(view.text!) else { return }
         selectedDate            = number
-        delegate.tapOnLineItem(tag: self.tag)
+        delegate.tapOnLineItem(tag: self.tag, numSelected: selectedDate!)
         view.backgroundColor    = .systemGray
 
         

@@ -13,9 +13,10 @@ class SecondVC: UIViewController {
     
     
     let button                  = CustomButton()
-    let calendarContainerView   = CalendarContainerView()
+    var calendarContainerView   : CalendarContainerView!
 
     private func configure() {
+        calendarContainerView = CalendarContainerView(date: Date())
         view.backgroundColor = .systemPink
         
         view.addSubview(calendarContainerView)
@@ -38,13 +39,14 @@ class SecondVC: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         configure()
+
         
     }
     
 
     
     @objc private func buttonTouch() {
-        calendarContainerView.open()
+        
     }
 
 

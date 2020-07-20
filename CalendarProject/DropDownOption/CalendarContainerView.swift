@@ -14,11 +14,16 @@ class CalendarContainerView: UIView {
     var isOpen                  = true
     var lineHeight : CGFloat    = 50
     var selectedLine            = 0
+    var selectedDayNumber       = 0
     var calendarNavBar          = CalendarControlView()
     var calendarLinesArray      : [CalendarSingleLineView] = []
-    var rowHeight               : Int!
+    var rowHeight               = 50
     var currentMonth            : Months!
     var currentYear             : Int!
+    var currentLineArray        : [String] = []
+    var weekdayLineArray        = ["S", "M", "T", "W", "T", "F", "S"]
+    
+
     
     
     
@@ -26,7 +31,15 @@ class CalendarContainerView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         configure()
-        setUpComponents(month: .July, fourDigitYear: 2020)
+        configureInitialSetup(month: .January, fourDigitYear: 2020)
+        
+    }
+    
+    init(date: Date) {
+        super.init(frame: .zero)
+        configure()
+        let customDate = date.convertToCustomDateObject()
+        configureInitialSetup(month: customDate.month, fourDigitYear: customDate.year)
         
     }
     
@@ -35,46 +48,67 @@ class CalendarContainerView: UIView {
     }
     
     private func configure() {
-        translatesAutoresizingMaskIntoConstraints = false
         if let storedDate   = defaults.object(forKey: "selectedDate") as? Date {
             selectedDate    = storedDate
         } else {
             selectedDate    = Date()
             defaults.setValue(selectedDate, forKey: "selectedDate")
         }
-        backgroundColor = .clear
+        translatesAutoresizingMaskIntoConstraints   = false
+        backgroundColor                             = .clear
     }
     
     private func configureInitialSetup(month: Months, fourDigitYear: Int) {
+        currentMonth                    = month
+        currentYear                     = fourDigitYear
+        calendarNavBar.delegate         = self
+        addSubview(calendarNavBar)
+        let titleLine                   = CalendarSingleLineView()
+        titleLine.heightWidth           = 40
+        titleLine.isRounded             = true
+        titleLine.set(bgColor: .systemBlue, textArray: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"])
+        addSubview(titleLine)
+        calendarLinesArray.append(titleLine)
+//        calendarNavBar.layer.cornerRadius   = 15
+//        calendarNavBar.layer.maskedCorners  = [.layerMaxXMinYCorner, .layerMinXMinYCorner]
         
+        
+        NSLayoutConstraint.activate([
+            
+            calendarNavBar.leadingAnchor.constraint(equalTo: self.leadingAnchor),
+            calendarNavBar.trailingAnchor.constraint(equalTo: self.trailingAnchor),
+            calendarNavBar.heightAnchor.constraint(equalToConstant: CGFloat(rowHeight)),
+            calendarNavBar.topAnchor.constraint(equalTo: self.topAnchor),
+            
+            titleLine.leadingAnchor.constraint(equalTo: self.leadingAnchor),
+            titleLine.trailingAnchor.constraint(equalTo: self.trailingAnchor),
+            titleLine.heightAnchor.constraint(equalToConstant: CGFloat(rowHeight)),
+            titleLine.topAnchor.constraint(equalTo: calendarNavBar.bottomAnchor)
+        ])
+
+        setUpComponents()
     }
     
 
     
-    private func setUpComponents(month: Months, fourDigitYear: Int) {
-        currentMonth                    = month
-        currentYear                     = fourDigitYear
+    private func setUpComponents() {
+        while calendarLinesArray.count > 1 {
+            calendarLinesArray.last?.removeFromSuperview()
+            calendarLinesArray.removeLast()
+        }
+        calendarNavBar.monthLabel.text  = "\(currentMonth.name), \(String(currentYear))"
+
         var datesArray : [String]       = []
-        let initialDate                 = CustomDate(year: fourDigitYear, date: 01, month: month, day: .none)
+        let initialDate                 = CustomDate(year: currentYear, date: 01, month: currentMonth, day: .none)
         let numberOfWeeks               = initialDate.getTotalWeeks()
         let firstOfMonth                = initialDate.getFirstOfMonth()
         let totalDays                   = initialDate.getNumberOfDaysInMonth()
-        
-        
-        addSubview(calendarNavBar)
-        calendarNavBar.delegate         = self
-        calendarNavBar.monthLabel.text  = month.name
-        let titleLine                   = CalendarSingleLineView()
-        titleLine.heightWidth           = 40
-        titleLine.isRounded             = true
-        titleLine.set(bgColor: .blue, textArray: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"])
-        addSubview(titleLine)
-        
-        calendarLinesArray.append(titleLine)
-        
-        for _ in 1...firstOfMonth.rawValue {
-            datesArray.append("")
+        if firstOfMonth.rawValue != 0 {
+            for _ in 1...firstOfMonth.rawValue {
+                datesArray.append("")
+            }
         }
+
         for x in 1...totalDays {
             datesArray.append(String(x))
         }
@@ -91,41 +125,34 @@ class CalendarContainerView: UIView {
             calenderLine.delegate   = self
             calenderLine.tag        = x
             addSubview(calendarLinesArray[x])
-            rowHeight = Int((350 - 70) / numberOfWeeks)
             NSLayoutConstraint.activate([
                 calendarLinesArray[x].leadingAnchor.constraint(equalTo: self.leadingAnchor),
                 calendarLinesArray[x].trailingAnchor.constraint(equalTo: self.trailingAnchor),
                 calendarLinesArray[x].heightAnchor.constraint(equalToConstant: CGFloat(rowHeight)),
                 calendarLinesArray[x].topAnchor.constraint(equalTo: calendarLinesArray[x-1].bottomAnchor)
             ])
-
         }
-        
-        NSLayoutConstraint.activate([
-            
-            calendarNavBar.leadingAnchor.constraint(equalTo: self.leadingAnchor),
-            calendarNavBar.trailingAnchor.constraint(equalTo: self.trailingAnchor),
-            calendarNavBar.heightAnchor.constraint(equalToConstant: CGFloat(rowHeight)),
-            calendarNavBar.topAnchor.constraint(equalTo: self.topAnchor),
-            
-            titleLine.leadingAnchor.constraint(equalTo: self.leadingAnchor),
-            titleLine.trailingAnchor.constraint(equalTo: self.trailingAnchor),
-            titleLine.heightAnchor.constraint(equalToConstant: CGFloat(rowHeight)),
-            titleLine.topAnchor.constraint(equalTo: calendarNavBar.bottomAnchor)
-        ])
+//        calendarLinesArray.last!.layer.cornerRadius     = 15
+//        calendarLinesArray.last!.layer.maskedCorners    = [.layerMaxXMaxYCorner, .layerMinXMaxYCorner]
+        if selectedDate.convertToCustomDateObject().year == currentYear {
+            if selectedDate.convertToCustomDateObject().month == currentMonth {
+                for x in 1...numberOfWeeks {
+                    for y in calendarLinesArray[x].labelArray {
+                        if y.text == String(selectedDate.convertToCustomDateObject().date) {
+                            y.backgroundColor = .systemGray
+                        }
+                    }
+                }
+            }
+        }
     }
     
-    func open() {
-        print("open")
-    }
+
     
     // MARK: Tap Functions
     
     
     private func collapse(line: Int) {
-        for x in calendarLinesArray {
-            print(x.frame.maxY)
-        }
         let durationTime : Double = 0.5
         UIView.animateKeyframes(withDuration: durationTime, delay: 0, options: .calculationModeCubicPaced) {
             var holderArray = self.calendarLinesArray
@@ -150,6 +177,16 @@ class CalendarContainerView: UIView {
                 self.calendarNavBar.layer.cornerRadius = 15
                 
             }
+            UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1) {
+                for x in 0...self.calendarLinesArray[self.selectedLine].labelArray.count - 1 {
+                    if self.calendarLinesArray[self.selectedLine].labelArray[x].text != String(self.selectedDayNumber) {
+                        self.calendarLinesArray[self.selectedLine].labelArray[x].text = self.weekdayLineArray[x]
+                        self.calendarLinesArray[self.selectedLine].labelArray[x].backgroundColor = .systemBlue
+                    }
+
+                }
+ 
+            }
         } completion: { _ in
 
         }
@@ -171,26 +208,40 @@ class CalendarContainerView: UIView {
             self.calendarNavBar.layer.cornerRadius = 0
             
         }
-    }
-    
-    @objc private func navBarArrowTaps() {
+        
+        for x in 0...self.calendarLinesArray[self.selectedLine].labelArray.count - 1 {
+            if self.calendarLinesArray[self.selectedLine].labelArray[x].text != String(self.selectedDayNumber) {
+                self.calendarLinesArray[self.selectedLine].labelArray[x].text = self.currentLineArray[x]
+                self.calendarLinesArray[self.selectedLine].labelArray[x].backgroundColor = .systemBackground
+            }
+
+        }
         
     }
 }
+
 extension CalendarContainerView : CalendarDelegate {
-    func tapOnLineItem(tag: Int) {
+    func tapOnLineItem(tag: Int, numSelected: Int) {
+        selectedDayNumber = numSelected
         if isOpen {
             selectedLine = tag
+            currentLineArray.removeAll()
+            for x in calendarLinesArray[selectedLine].labelArray {
+                currentLineArray.append(x.text!)
+            }
             bringSubviewToFront(calendarLinesArray[selectedLine])
             self.layoutIfNeeded()
             for x in calendarLinesArray {
                 x.cleanUp()
             }
             collapse(line: tag)
-            isOpen = false
+            isOpen          = false
+            let dateHolder  = CustomDate(year: self.currentYear, date: numSelected, month: currentMonth, day: .none)
+            selectedDate    = dateHolder.createDateFromCustomDate()
+
         } else {
             expand()
-            isOpen =  true
+            isOpen = true
             for x in calendarLinesArray {
                 x.cleanUp()
             }
@@ -202,15 +253,15 @@ extension CalendarContainerView : CalendarNavBarDelegate {
     func tapHandler(wasTapped: TapOptions) {
         switch wasTapped {
         case .left:
-            previousMonth(currentMonth: currentMonth)
+            previousMonth()
         case .center:
-            print("center")
+            return
         case .right:
-            nextMonth(currentMonth: currentMonth)
+            nextMonth()
         }
     }
     
-    private func previousMonth(currentMonth: Months) {
+    private func previousMonth() {
         var newMonth : Months!
         for x in Months.allCases {
             if x.rawValue == currentMonth.rawValue - 1 {
@@ -222,14 +273,28 @@ extension CalendarContainerView : CalendarNavBarDelegate {
             currentYear -= 1
             
         }
+        currentMonth = newMonth
         
-        
+        setUpComponents()
         
         
     }
     
-    private func nextMonth(currentMonth: Months) {
-        print("right")
+    private func nextMonth() {
+        var newMonth : Months!
+        for x in Months.allCases {
+            if x.rawValue == currentMonth.rawValue + 1 {
+                newMonth = x
+            }
+        }
+        if newMonth == nil {
+            newMonth = .December
+            currentYear += 1
+            
+        }
+        currentMonth = newMonth
+        
+        setUpComponents()
         
     }
 }

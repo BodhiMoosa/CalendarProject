@@ -22,10 +22,26 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             window?.makeKeyAndVisible()
     }
 
-        func createInitialViewController() -> UIViewController {
-            let vc = SecondVC()
+        func createInitialViewController() -> UITabBarController {
+            let vc = UITabBarController()
+            vc.viewControllers = [createDropDownVC(), createSlidingVC()]
             return vc
         }
+    
+    func createSlidingVC() -> UINavigationController {
+        let vc = SlidingCalendarVC()
+        vc.tabBarItem = UITabBarItem(title: "Sliding Option", image: Images.calendarOne, tag: 1)
+        vc.title = "Sliding Option"
+        return UINavigationController(rootViewController: vc)
+    }
+    
+    func createDropDownVC() -> UINavigationController {
+        let vc = SecondVC()
+        vc.tabBarItem = UITabBarItem(title: "DropDown Option", image: Images.calendarOne, tag: 2)
+        vc.title = "DropDown Option"
+        return UINavigationController(rootViewController: vc)
+    }
+    
     func sceneDidDisconnect(_ scene: UIScene) {
         // Called as the scene is being released by the system.
         // This occurs shortly after the scene enters the background, or when its session is discarded.
